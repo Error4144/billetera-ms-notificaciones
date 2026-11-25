@@ -1,0 +1,34 @@
+name: CI de ms-notificaciones
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - name: Compilar con advertencias de javac y ejecutar pruebas
+        run: mvn --batch-mode --no-transfer-progress clean verify
+      - name: Validar configuración de ejemplo
+        run: |
+          set -a
+          source .env.example
+          set +a
+          java -jar target/ms-notificaciones-*.jar
+      - name: Construir imagen de verificación
+        run: docker build --tag billetera-ms-notificaciones:ci .
